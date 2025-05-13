@@ -1,10 +1,9 @@
 package com.ounal.activity_manager;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/activities")
@@ -16,5 +15,10 @@ public class ActivityController {
     @PostMapping
     public Activity createActivity(@RequestBody Activity activity) {
         return activityService.createActivity(activity);
+    }
+
+    @GetMapping
+    public List<Activity> getAllActivities() {
+        return activityService.getAllActivities();
     }
 }

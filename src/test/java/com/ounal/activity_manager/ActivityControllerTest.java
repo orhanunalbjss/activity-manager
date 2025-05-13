@@ -1,5 +1,6 @@
 package com.ounal.activity_manager;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.assertj.core.api.BDDAssertions;
@@ -14,9 +15,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
@@ -69,6 +75,38 @@ public class ActivityControllerTest {
 
         BDDAssertions.then(actualActivity)
                 .isEqualTo(expectedActivity);
+    }
+
+    @Test
+    public void whenGetAllActivities_thenCallService() throws Exception {
+        mockMvc.perform(get("/activities"));
+
+        then(activityService)
+                .should()
+                .getAllActivities();
+    }
+
+    @Test
+    public void givenActivities_whenGetAllActivities_thenReturnAllActivities() throws Exception {
+        var expectedActivities = generateTestActivities();
+
+        given(activityService.getAllActivities())
+                .willReturn(expectedActivities);
+
+        var mvcResult = mockMvc.perform(get("/activities")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andReturn();
+
+        var mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+
+        var actualActivities = mapper.readValue(
+                mvcResult.getResponse().getContentAsString(), new TypeReference<List<Activity>>() {
+                });
+
+        assertThat(actualActivities, containsInAnyOrder(expectedActivities.toArray()));
     }
 
     private static List<Activity> generateTestActivities() {

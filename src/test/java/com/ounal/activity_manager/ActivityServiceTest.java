@@ -44,6 +44,28 @@ public class ActivityServiceTest {
                 .isEqualTo(expectedActivity);
     }
 
+    @Test
+    void whenGetAllActivities_thenCallRepository() {
+        activityService.getAllActivities();
+
+        BDDMockito.then(activityRepository)
+                .should()
+                .findAll();
+    }
+
+    @Test
+    void givenActivities_whenGetAllActivities_thenReturnAllActivities() {
+        var expectedActivities = generateTestActivities();
+
+        given(activityRepository.findAll())
+                .willReturn(expectedActivities);
+
+        var actualActivities = activityService.getAllActivities();
+
+        BDDAssertions.then(actualActivities)
+                .isEqualTo(expectedActivities);
+    }
+
     private static List<Activity> generateTestActivities() {
         var activity1 = Activity.builder()
                 .id(1L)
