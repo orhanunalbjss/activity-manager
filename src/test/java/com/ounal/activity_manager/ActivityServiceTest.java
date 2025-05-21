@@ -66,6 +66,15 @@ public class ActivityServiceTest {
                 .isEqualTo(expectedActivities);
     }
 
+    @Test
+    void whenDeleteActivity_thenCallRepository() {
+        activityService.deleteActivity(1L);
+
+        BDDMockito.then(activityRepository)
+                .should()
+                .deleteById(1L);
+    }
+
     private static List<Activity> generateTestActivities() {
         var activity1 = Activity.builder()
                 .id(1L)

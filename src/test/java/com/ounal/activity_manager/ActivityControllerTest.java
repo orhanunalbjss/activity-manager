@@ -20,8 +20,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -107,6 +106,15 @@ public class ActivityControllerTest {
                 });
 
         assertThat(actualActivities, containsInAnyOrder(expectedActivities.toArray()));
+    }
+
+    @Test
+    public void whenDeleteActivity_thenCallService() throws Exception {
+        mockMvc.perform(delete("/activities/1"));
+
+        then(activityService)
+                .should()
+                .deleteActivity(1L);
     }
 
     private static List<Activity> generateTestActivities() {

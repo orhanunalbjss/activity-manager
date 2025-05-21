@@ -9,8 +9,12 @@ import java.util.List;
 @RequestMapping("/activities")
 public class ActivityController {
 
+    private final ActivityService activityService;
+
     @Autowired
-    private ActivityService activityService;
+    public ActivityController(ActivityService activityService) {
+        this.activityService = activityService;
+    }
 
     @PostMapping
     public Activity createActivity(@RequestBody Activity activity) {
@@ -20,5 +24,10 @@ public class ActivityController {
     @GetMapping
     public List<Activity> getAllActivities() {
         return activityService.getAllActivities();
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteActivity(@PathVariable Long id) {
+        activityService.deleteActivity(id);
     }
 }
