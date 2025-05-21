@@ -3,12 +3,15 @@ package com.ounal.activity_manager;
 import org.assertj.core.api.BDDAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.BDDMockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 
+import static com.ounal.activity_manager.ActivityTestHelper.generateTestActivities;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 
@@ -75,7 +78,7 @@ public class ActivityServiceTest {
 
         activityService.updateActivity(1L, expectedActivity);
 
-        InOrder inOrder = Mockito.inOrder(activityRepository);
+        var inOrder = Mockito.inOrder(activityRepository);
 
         BDDMockito.then(activityRepository)
                 .should(inOrder)
@@ -95,7 +98,7 @@ public class ActivityServiceTest {
 
         activityService.updateActivity(1L, expectedActivity);
 
-        InOrder inOrder = Mockito.inOrder(activityRepository);
+        var inOrder = Mockito.inOrder(activityRepository);
 
         BDDMockito.then(activityRepository)
                 .should(inOrder)
@@ -142,23 +145,5 @@ public class ActivityServiceTest {
         BDDMockito.then(activityRepository)
                 .should()
                 .deleteById(1L);
-    }
-
-    private static List<Activity> generateTestActivities() {
-        var activity1 = Activity.builder()
-                .id(1L)
-                .name("Activity name 1")
-                .type("Activity type 1")
-                .participants(3)
-                .build();
-
-        var activity2 = Activity.builder()
-                .id(2L)
-                .name("Activity name 2")
-                .type("Activity type 2")
-                .participants(5)
-                .build();
-
-        return List.of(activity1, activity2);
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static com.ounal.activity_manager.ActivityTestHelper.generateTestActivities;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
@@ -157,23 +158,5 @@ public class ActivityControllerTest {
         then(activityService)
                 .should()
                 .deleteActivity(1L);
-    }
-
-    private static List<Activity> generateTestActivities() {
-        var activity1 = Activity.builder()
-                .id(1L)
-                .name("Activity name 1")
-                .type("Activity type 1")
-                .participants(3)
-                .build();
-
-        var activity2 = Activity.builder()
-                .id(2L)
-                .name("Activity name 2")
-                .type("Activity type 2")
-                .participants(5)
-                .build();
-
-        return List.of(activity1, activity2);
     }
 }
