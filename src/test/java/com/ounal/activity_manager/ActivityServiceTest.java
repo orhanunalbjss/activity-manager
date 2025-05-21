@@ -3,14 +3,14 @@ package com.ounal.activity_manager;
 import org.assertj.core.api.BDDAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.BDDMockito;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 public class ActivityServiceTest {
@@ -64,6 +64,75 @@ public class ActivityServiceTest {
 
         BDDAssertions.then(actualActivities)
                 .isEqualTo(expectedActivities);
+    }
+
+    @Test
+    void givenActivityExists_whenUpdateActivity_thenCallRepositoryInCorrectOrder() {
+        var expectedActivity = generateTestActivities().get(0);
+
+        given(activityRepository.findById(1L))
+                .willReturn(Optional.of(expectedActivity));
+
+        activityService.updateActivity(1L, expectedActivity);
+
+        InOrder inOrder = Mockito.inOrder(activityRepository);
+
+        BDDMockito.then(activityRepository)
+                .should(inOrder)
+                .findById(1L);
+
+        BDDMockito.then(activityRepository)
+                .should(inOrder)
+                .save(expectedActivity);
+    }
+
+    @Test
+    void givenActivityDoesNotExist_whenUpdateActivity_thenDoNotSaveActivity() {
+        var expectedActivity = generateTestActivities().get(0);
+
+        given(activityRepository.findById(1L))
+                .willReturn(Optional.empty());
+
+        activityService.updateActivity(1L, expectedActivity);
+
+        InOrder inOrder = Mockito.inOrder(activityRepository);
+
+        BDDMockito.then(activityRepository)
+                .should(inOrder)
+                .findById(1L);
+
+        BDDMockito.then(activityRepository)
+                .should(inOrder, never())
+                .save(expectedActivity);
+    }
+
+    @Test
+    void givenActivityExists_whenUpdateActivity_thenReturnActivity() {
+        var expectedActivity = generateTestActivities().get(0);
+
+        given(activityRepository.findById(1L))
+                .willReturn(Optional.of(expectedActivity));
+
+        given(activityRepository.save(expectedActivity))
+                .willReturn(expectedActivity);
+
+        var actualActivity = activityService.updateActivity(1L, expectedActivity);
+
+        BDDAssertions.then(actualActivity)
+                .isEqualTo(expectedActivity);
+    }
+
+    @Test
+    void givenActivityDoesNotExist_whenUpdateActivity_thenReturnNull() {
+        var expectedActivity = generateTestActivities().get(0);
+
+        given(activityRepository.findById(1L))
+                .willReturn(Optional.empty());
+
+        var actualActivity = activityService.updateActivity(1L, expectedActivity);
+
+        BDDAssertions.then(actualActivity)
+                .isNull();
     }
 
     @Test

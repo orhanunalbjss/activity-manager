@@ -23,6 +23,17 @@ public class ActivityService {
         return activityRepository.findAll();
     }
 
+    public Activity updateActivity(Long id, Activity updatedActivity) {
+        var activityOptional = activityRepository.findById(id);
+        if (activityOptional.isEmpty()) {
+            return null;
+        }
+
+        updatedActivity.setId(id);
+
+        return activityRepository.save(updatedActivity);
+    }
+
     public void deleteActivity(Long id) {
         activityRepository.deleteById(id);
     }

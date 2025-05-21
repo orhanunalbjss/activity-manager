@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.assertj.core.api.BDDAssertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +36,22 @@ public class ActivityControllerTest {
     @MockitoBean
     private ActivityService activityService;
 
+    private ObjectMapper mapper;
+
+    @BeforeEach
+    void setUp() {
+        mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+    }
+
+    @AfterEach
+    void tearDown() {
+        mapper = null;
+    }
+
     @Test
     public void whenCreateActivity_thenCallService() throws Exception {
         var expectedActivity = generateTestActivities().get(0);
-
-        var mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
 
         var activityBytes = mapper.writeValueAsBytes(expectedActivity);
 
@@ -58,9 +70,6 @@ public class ActivityControllerTest {
 
         given(activityService.createActivity(expectedActivity))
                 .willReturn(expectedActivity);
-
-        var mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
 
         var activityBytes = mapper.writeValueAsBytes(expectedActivity);
 
@@ -98,14 +107,47 @@ public class ActivityControllerTest {
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andReturn();
 
-        var mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-
         var actualActivities = mapper.readValue(
                 mvcResult.getResponse().getContentAsString(), new TypeReference<List<Activity>>() {
                 });
 
         assertThat(actualActivities, containsInAnyOrder(expectedActivities.toArray()));
+    }
+
+    @Test
+    public void whenUpdateActivity_thenCallService() throws Exception {
+        var expectedActivity = generateTestActivities().get(0);
+
+        var activityBytes = mapper.writeValueAsBytes(expectedActivity);
+
+        mockMvc.perform(put("/activities/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(activityBytes));
+
+        then(activityService)
+                .should()
+                .updateActivity(1L, expectedActivity);
+    }
+
+    @Test
+    public void whenUpdateActivity_thenReturnActivity() throws Exception {
+        var expectedActivity = generateTestActivities().get(0);
+
+        given(activityService.updateActivity(1L, expectedActivity))
+                .willReturn(expectedActivity);
+
+        var activityBytes = mapper.writeValueAsBytes(expectedActivity);
+
+        var mvcResult = mockMvc.perform(put("/activities/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(activityBytes))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var actualActivity = mapper.readValue(mvcResult.getResponse().getContentAsString(), Activity.class);
+
+        BDDAssertions.then(actualActivity)
+                .isEqualTo(expectedActivity);
     }
 
     @Test
