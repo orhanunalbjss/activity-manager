@@ -8,10 +8,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
+import static com.ounal.activity_manager.ActivityService.BORED_API_GET_RANDOM_ACTIVITY_URL;
 import static com.ounal.activity_manager.ActivityTestHelper.generateTestActivities;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 
@@ -20,11 +23,13 @@ public class ActivityServiceTest {
 
     @Mock
     private ActivityRepository activityRepository;
+    @Mock
+    private RestTemplate restTemplate;
     @InjectMocks
     private ActivityService activityService;
 
     @Test
-    void whenCreateActivity_thenCallRepository() {
+    public void whenCreateActivity_thenCallRepository() {
         var expectedActivity = generateTestActivities().get(0);
 
         activityService.createActivity(expectedActivity);
@@ -35,7 +40,7 @@ public class ActivityServiceTest {
     }
 
     @Test
-    void whenCreateActivity_thenReturnActivity() {
+    public void whenCreateActivity_thenReturnActivity() {
         var expectedActivity = generateTestActivities().get(0);
 
         given(activityRepository.save(expectedActivity))
@@ -48,7 +53,80 @@ public class ActivityServiceTest {
     }
 
     @Test
-    void whenGetAllActivities_thenCallRepository() {
+    public void whenCreateRandomActivity_thenCallRepository() {
+        var activityDto = ActivityDto.builder()
+                .name("random name")
+                .type("random type")
+                .participants(24)
+                .build();
+
+        given(restTemplate.getForObject(BORED_API_GET_RANDOM_ACTIVITY_URL, ActivityDto.class))
+                .willReturn(activityDto);
+
+        activityService.createRandomActivity();
+
+        var expectedActivity = Activity.builder()
+                .name("random name")
+                .type("random type")
+                .participants(24)
+                .build();
+
+        BDDMockito.then(activityRepository)
+                .should()
+                .save(expectedActivity);
+    }
+
+    @Test
+    public void givenThirdPartyApiReturnsNull_whenCreateRandomActivity_thenDoNotSaveActivity() {
+        given(restTemplate.getForObject(BORED_API_GET_RANDOM_ACTIVITY_URL, ActivityDto.class))
+                .willReturn(null);
+
+        activityService.createRandomActivity();
+
+        BDDMockito.then(activityRepository)
+                .should(never())
+                .save(any());
+    }
+
+    @Test
+    public void whenCreateRandomActivity_thenReturnActivity() {
+        var activityDto = ActivityDto.builder()
+                .name("random name")
+                .type("random type")
+                .participants(24)
+                .build();
+
+        given(restTemplate.getForObject(BORED_API_GET_RANDOM_ACTIVITY_URL, ActivityDto.class))
+                .willReturn(activityDto);
+
+        var expectedActivity = Activity.builder()
+                .name("random name")
+                .type("random type")
+                .participants(24)
+                .build();
+
+        given(activityRepository.save(expectedActivity))
+                .willReturn(expectedActivity);
+
+        var actualActivity = activityService.createRandomActivity();
+
+        BDDAssertions.then(actualActivity)
+                .isEqualTo(expectedActivity);
+    }
+
+    @Test
+    public void givenThirdPartyApiReturnsNull_whenCreateRandomActivity_thenReturnNull() {
+        given(restTemplate.getForObject(BORED_API_GET_RANDOM_ACTIVITY_URL, ActivityDto.class))
+                .willReturn(null);
+
+        var actualActivity = activityService.createRandomActivity();
+
+        BDDAssertions.then(actualActivity)
+                .isNull();
+    }
+
+    @Test
+    public void whenGetAllActivities_thenCallRepository() {
         activityService.getAllActivities();
 
         BDDMockito.then(activityRepository)
@@ -57,7 +135,7 @@ public class ActivityServiceTest {
     }
 
     @Test
-    void givenActivities_whenGetAllActivities_thenReturnAllActivities() {
+    public void givenActivities_whenGetAllActivities_thenReturnAllActivities() {
         var expectedActivities = generateTestActivities();
 
         given(activityRepository.findAll())
@@ -70,7 +148,7 @@ public class ActivityServiceTest {
     }
 
     @Test
-    void givenActivityExists_whenUpdateActivity_thenCallRepositoryInCorrectOrder() {
+    public void givenActivityExists_whenUpdateActivity_thenCallRepositoryInCorrectOrder() {
         var expectedActivity = generateTestActivities().get(0);
 
         given(activityRepository.findById(1L))
@@ -90,7 +168,7 @@ public class ActivityServiceTest {
     }
 
     @Test
-    void givenActivityDoesNotExist_whenUpdateActivity_thenDoNotSaveActivity() {
+    public void givenActivityDoesNotExist_whenUpdateActivity_thenDoNotSaveActivity() {
         var expectedActivity = generateTestActivities().get(0);
 
         given(activityRepository.findById(1L))
@@ -110,7 +188,7 @@ public class ActivityServiceTest {
     }
 
     @Test
-    void givenActivityExists_whenUpdateActivity_thenReturnActivity() {
+    public void givenActivityExists_whenUpdateActivity_thenReturnActivity() {
         var expectedActivity = generateTestActivities().get(0);
 
         given(activityRepository.findById(1L))
@@ -126,7 +204,7 @@ public class ActivityServiceTest {
     }
 
     @Test
-    void givenActivityDoesNotExist_whenUpdateActivity_thenReturnNull() {
+    public void givenActivityDoesNotExist_whenUpdateActivity_thenReturnNull() {
         var expectedActivity = generateTestActivities().get(0);
 
         given(activityRepository.findById(1L))
@@ -139,7 +217,7 @@ public class ActivityServiceTest {
     }
 
     @Test
-    void whenDeleteActivity_thenCallRepository() {
+    public void whenDeleteActivity_thenCallRepository() {
         activityService.deleteActivity(1L);
 
         BDDMockito.then(activityRepository)

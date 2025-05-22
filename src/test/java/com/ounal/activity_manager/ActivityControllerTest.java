@@ -87,6 +87,34 @@ public class ActivityControllerTest {
     }
 
     @Test
+    public void whenCreateRandomActivity_thenCallService() throws Exception {
+        mockMvc.perform(post("/activities/random")
+                .contentType(MediaType.APPLICATION_JSON));
+
+        then(activityService)
+                .should()
+                .createRandomActivity();
+    }
+
+    @Test
+    public void whenCreateRandomActivity_thenReturnActivity() throws Exception {
+        var expectedActivity = generateTestActivities().get(0);
+
+        given(activityService.createRandomActivity())
+                .willReturn(expectedActivity);
+
+        var mvcResult = mockMvc.perform(post("/activities/random")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var actualActivity = mapper.readValue(mvcResult.getResponse().getContentAsString(), Activity.class);
+
+        BDDAssertions.then(actualActivity)
+                .isEqualTo(expectedActivity);
+    }
+
+    @Test
     public void whenGetAllActivities_thenCallService() throws Exception {
         mockMvc.perform(get("/activities"));
 

@@ -21,6 +21,11 @@ public class ActivityController {
         return activityService.createActivity(activity);
     }
 
+    @PostMapping("/random")
+    public Activity createRandomActivity() {
+        return activityService.createRandomActivity();
+    }
+
     @GetMapping
     public List<Activity> getAllActivities() {
         return activityService.getAllActivities();
