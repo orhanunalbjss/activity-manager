@@ -4,3 +4,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    networks:
+      - activity-manager-network
+  activity-manager-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - activity-manager-network
+
+networks:
+  activity-manager-network:
+    driver: bridge
