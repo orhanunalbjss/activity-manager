@@ -21,6 +21,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import {CircularProgress} from "@mui/material";
+import Alert from '@mui/material/Alert'
 
 function AddNewActivityButton({loading, handleOpenAddDialog}) {
   return (
@@ -104,8 +105,11 @@ function ActivityRow({activity, onEdit, onDelete}) {
 }
 
 function ActivityTable({activities, onEdit, onDelete}) {
+  const safeActivities = Array.isArray(activities) ? activities : [];
+  const CustomPaper = (props) => <Paper {...props} />;
+
   return (
-    <TableContainer component={Paper}>
+    <TableContainer component={CustomPaper}>
       <Table sx={{minWidth: 650}}>
         <TableHead>
           <TableRow>
@@ -116,7 +120,7 @@ function ActivityTable({activities, onEdit, onDelete}) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {activities.map((activity) =>
+          {safeActivities.map((activity) =>
             <ActivityRow
               key={activity.id}
               activity={activity}
@@ -200,17 +204,38 @@ function ActivityManagerApp() {
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingActivity, setEditingActivity] = useState(null);
+  const [error, setError] = useState(/** @type {string|null} */ (null));
+
+  const fetchWithTimeout = (url, options = {}, timeout = 5000) => {
+    return Promise.race([
+      fetch(url, options),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out")), timeout)
+      )
+    ]);
+  };
 
   const fetchData = () => {
     setLoading(true);
-    fetch("http://localhost:8080/activities")
-      .then((res) => res.json())
+    setError(null);
+    fetchWithTimeout("http://localhost:8080/activities")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Network response was not OK");
+        }
+        return res.json();
+      })
       .then((data) => {
+        if (!Array.isArray(data)) {
+          throw new Error("Expected an array of activities");
+        }
         setActivities(data);
         setLoading(false);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
+        setError("Error fetching activities.");
+        setActivities([]);
         setLoading(false);
       });
   };
@@ -220,13 +245,23 @@ function ActivityManagerApp() {
   }, []);
 
   const handleAddRandomActivity = () => {
+    setError(null);
     fetch("http://localhost:8080/activities/random", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("HTTP error in adding random activity");
+        }
+        return res.json();
+      })
       .then(() => {
         fetchData();
+      })
+      .catch((error) => {
+        console.error("Error adding random activity:", error);
+        setError("Error adding random activity.");
       });
   };
 
@@ -246,6 +281,7 @@ function ActivityManagerApp() {
   }
 
   const handleSaveActivity = (activity) => {
+    setError(null);
     const method = editingActivity ? "PUT" : "POST";
     const url = editingActivity
       ? `http://localhost:8080/activities/${editingActivity.id}`
@@ -259,17 +295,38 @@ function ActivityManagerApp() {
       body: jsonWithoutId,
       headers: {"Content-Type": "application/json"},
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("HTTP error in saving activity");
+        }
+        return res.json();
+      })
       .then(() => {
         fetchData();
         setOpenDialog(false);
+      })
+      .catch((error) => {
+        console.error("Error saving activity:", error);
+        setError("Error saving activity.");
       });
   };
 
   const handleDeleteActivity = (id) => {
+    setError(null);
     fetch(`http://localhost:8080/activities/${id}`, {
       method: "DELETE",
-    }).then(() => fetchData());
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("HTTP error in deleting activity");
+        }
+        return fetchData();
+      })
+      .then(() => fetchData())
+      .catch((error) => {
+        console.error("Error deleting activity:", error);
+        setError("Error deleting activity.");
+      });
   };
 
   return (
@@ -293,6 +350,7 @@ function ActivityManagerApp() {
         loading={loading}
         handleOpenAddDialog={handleOpenAddDialog}
         handleAddRandomActivity={handleAddRandomActivity}/>
+      {error && <Alert severity="error">{error}</Alert>}
       {loading ? (
         <Box sx={{display: "flex", justifyContent: "center", mt: 3}}>
           <CircularProgress/>

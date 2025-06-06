@@ -65,9 +65,12 @@ describe("Activity Manager App", () => {
     cy.contains("button", "Add New Activity").click();
 
     cy.get('[role="dialog"]').within(() => {
-      cy.get("input").eq(0).clear().type("New Activity");
-      cy.get("input").eq(1).clear().type("Custom");
-      cy.get("input").eq(2).clear().type("4");
+      cy.get("input").eq(0).clear();
+      cy.get("input").eq(0).type("New Activity");
+      cy.get("input").eq(1).clear();
+      cy.get("input").eq(1).type("Custom");
+      cy.get("input").eq(2).clear();
+      cy.get("input").eq(2).type("4");
 
       cy.contains("button", "Save").click();
     });
@@ -103,7 +106,8 @@ describe("Activity Manager App", () => {
 
     cy.get('[role="dialog"]').should("be.visible");
 
-    cy.get('[role="dialog"] input').eq(0).clear().type("Updated Activity");
+    cy.get('[role="dialog"] input').eq(0).clear();
+    cy.get('[role="dialog"] input').eq(0).type("Updated Activity");
 
     cy.get('[role="dialog"]').contains("button", "Save").click();
 
@@ -164,5 +168,88 @@ describe("Activity Manager App", () => {
 
     cy.get("tbody > tr").should("have.length", 3);
     cy.get("tbody > tr").last().should("contain", "Random Activity");
+  });
+
+  describe("Activity Manager Error Handling", () => {
+    it("should display an error message when fetching activities fails", () => {
+      cy.intercept('GET', 'http://localhost:8080/activities', {
+        statusCode: 500,
+        body: {},
+      }).as('getActivitiesError');
+
+      cy.visit('/');
+      cy.wait('@getActivitiesError');
+      cy.contains('Error fetching activities.').should('be.visible');
+    });
+
+    it("should display an error message when creating a new activity fails", () => {
+      cy.intercept("POST", "http://localhost:8080/activities", {
+        statusCode: 500,
+        body: {},
+      }).as("postNewActivityError");
+
+      cy.intercept("GET", "http://localhost:8080/activities", {
+        statusCode: 200,
+        body: [],
+      });
+
+      cy.contains("button", "Add New Activity").click();
+
+      cy.get('[role="dialog"]').within(() => {
+        cy.get("input").eq(0).clear();
+        cy.get("input").eq(0).type("Fail Activity");
+        cy.get("input").eq(1).clear();
+        cy.get("input").eq(1).type("Type");
+        cy.get("input").eq(2).clear();
+        cy.get("input").eq(2).type("3");
+        cy.contains("button", "Save").click();
+      });
+
+      cy.wait("@postNewActivityError");
+      cy.contains("Error saving activity.").should("be.visible");
+    });
+
+    it("should display an error message when updating an activity fails", () => {
+      cy.intercept("PUT", /http:\/\/localhost:8080\/activities\/\d+/, {
+        statusCode: 500,
+        body: {},
+      }).as("putActivityError");
+
+      cy.get('button[aria-label="edit"]').first().click();
+
+      cy.get('[role="dialog"]').should("be.visible");
+
+      cy.get('[role="dialog"] input').eq(0).clear();
+      cy.get('[role="dialog"] input').eq(0).type("Update Failure");
+
+      cy.get('[role="dialog"]').contains("button", "Save").click();
+
+      cy.wait("@putActivityError");
+      cy.contains("Error saving activity.").should("be.visible");
+    });
+
+    it("should display an error message when deleting an activity fails", () => {
+      cy.intercept("DELETE", /http:\/\/localhost:8080\/activities\/\d+/, {
+        statusCode: 500,
+        body: {},
+      }).as("deleteActivityError");
+
+      cy.get('button[aria-label="delete"]').first().click();
+
+      cy.wait("@deleteActivityError");
+      cy.contains("Error deleting activity.").should("be.visible");
+    });
+
+    it("should display an error message when adding a random activity fails", () => {
+      cy.intercept("POST", "http://localhost:8080/activities/random", {
+        statusCode: 500,
+        body: {},
+      }).as("postRandomActivityError");
+
+      cy.contains("button", "Add Random Activity").click();
+
+      cy.wait("@postRandomActivityError");
+      cy.contains("Error adding random activity.").should("be.visible");
+    });
   });
 });
